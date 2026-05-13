@@ -1,172 +1,137 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  StyleSheet, Text, View, TouchableOpacity,
+  ScrollView, StatusBar, Alert,
 } from "react-native";
+import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { HistoricoItem } from "./index";
 
 export default function Historico() {
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const router = useRouter();
 
-  useEffect(() => {
-    carregarHistorico();
-  }, []);
+  useEffect(() => { carregar(); }, []);
 
-  const carregarHistorico = async () => {
+  const carregar = async () => {
     try {
       const raw = await AsyncStorage.getItem("historico");
       if (raw) setHistorico(JSON.parse(raw));
-    } catch (e) {
-      console.error("Erro ao carregar histórico:", e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const limparHistorico = () => {
-    Alert.alert(
-      "Limpar histórico",
-      "Deseja apagar todos os cálculos salvos?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Apagar tudo",
-          style: "destructive",
-          onPress: async () => {
-            await AsyncStorage.removeItem("historico");
-            setHistorico([]);
-          },
-        },
-      ]
-    );
+    Alert.alert("Limpar histórico", "Deseja apagar todos os cálculos salvos?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Apagar tudo", style: "destructive",
+        onPress: async () => {
+          await AsyncStorage.removeItem("historico");
+          setHistorico([]);
+        }
+      }
+    ]);
   };
 
   return (
-    <View style={styles.root}>
+    <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* HEADER */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.btnVoltar}>
-            <Text style={styles.btnVoltarText}>← Voltar</Text>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => router.back()} style={s.btnVoltar}>
+            <Text style={s.btnVoltarText}>← Voltar</Text>
           </TouchableOpacity>
-          <Text style={styles.headerEyebrow}>ÚLTIMOS 15</Text>
-          <Text style={styles.headerTitle}>Histórico</Text>
-          <Text style={styles.headerSub}>{historico.length} cálculo{historico.length !== 1 ? "s" : ""} salvo{historico.length !== 1 ? "s" : ""}</Text>
+          <Text style={s.eyebrow}>ÚLTIMOS 15</Text>
+          <Text style={s.title}>Histórico</Text>
+          <Text style={s.sub}>{historico.length} cálculo{historico.length !== 1 ? "s" : ""} salvo{historico.length !== 1 ? "s" : ""}</Text>
         </View>
 
-        {/* LISTA VAZIA */}
         {historico.length === 0 && (
-          <View style={styles.vazioBox}>
-            <Text style={styles.vazioEmoji}>📋</Text>
-            <Text style={styles.vazioTitulo}>Nenhum cálculo ainda</Text>
-            <Text style={styles.vazioSub}>Faça um cálculo na tela principal para ele aparecer aqui.</Text>
+          <View style={s.vazioBox}>
+            <Text style={s.vazioEmoji}>📋</Text>
+            <Text style={s.vazioTitulo}>Nenhum cálculo ainda</Text>
+            <Text style={s.vazioSub}>Faça um cálculo na tela principal para ele aparecer aqui.</Text>
           </View>
         )}
 
-        {/* ITENS */}
         {historico.map((item, index) => (
-          <View key={item.id} style={styles.itemCard}>
-            <View style={styles.itemHeader}>
-              <View style={styles.itemNumero}>
-                <Text style={styles.itemNumeroText}>{index + 1}</Text>
+          <View key={item.id} style={s.card}>
+            <View style={s.cardHeader}>
+              <View style={s.numero}>
+                <Text style={s.numeroText}>{index + 1}</Text>
               </View>
-              <Text style={styles.itemData}>{item.data}</Text>
+              <Text style={s.data}>{item.data}</Text>
             </View>
 
-            <View style={styles.itemDestaque}>
-              <Text style={styles.itemValorGrande}>
+            <View style={s.destaque}>
+              <Text style={s.valorGrande}>
                 {Math.round(item.resultado.comprimentoComFator).toLocaleString("pt-BR")}
               </Text>
-              <Text style={styles.itemUnidade}> metros</Text>
+              <Text style={s.unidade}> metros</Text>
             </View>
-            <Text style={styles.itemKm}>
-              ≈ {(item.resultado.comprimentoComFator / 1000).toFixed(2)} km
-            </Text>
+            <Text style={s.km}>≈ {(item.resultado.comprimentoComFator / 1000).toFixed(2)} km</Text>
 
-            <View style={styles.itemDivisor} />
+            <View style={s.divisor} />
 
-            <View style={styles.itemDetalhes}>
+            <View style={s.medidas}>
               {[
                 ["Ø Interno", `${item.valores.diametroInterno} mm`],
                 ["Ø Externo", `${item.valores.diametroExterno} mm`],
                 ["Largura", `${item.valores.largura} mm`],
                 ["Cabo", `${item.valores.diametroCabo} mm`],
               ].map(([label, valor]) => (
-                <View key={label} style={styles.itemDetalheCol}>
-                  <Text style={styles.itemDetalheLabel}>{label}</Text>
-                  <Text style={styles.itemDetalheValor}>{valor}</Text>
+                <View key={label} style={s.medidaItem}>
+                  <Text style={s.medidaLabel}>{label}</Text>
+                  <Text style={s.medidaValor}>{valor}</Text>
                 </View>
               ))}
             </View>
           </View>
         ))}
 
-        {/* BOTÃO LIMPAR */}
         {historico.length > 0 && (
-          <TouchableOpacity style={styles.btnLimpar} onPress={limparHistorico} activeOpacity={0.7}>
-            <Text style={styles.btnLimparText}>🗑 Limpar histórico</Text>
+          <TouchableOpacity style={s.btnLimpar} onPress={limparHistorico}>
+            <Text style={s.btnLimparText}>🗑 Limpar histórico</Text>
           </TouchableOpacity>
         )}
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>BobinaApp © 2025</Text>
-        </View>
+        <View style={{ height: 20 }} />
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#0D1B2A" },
   scroll: { paddingBottom: 40 },
-
-  header: { paddingTop: 60, paddingBottom: 28, paddingHorizontal: 24, backgroundColor: "#0D1B2A" },
-  btnVoltar: { marginBottom: 16 },
+  header: { paddingTop: 52, paddingBottom: 16, paddingHorizontal: 20 },
+  btnVoltar: { marginBottom: 12 },
   btnVoltarText: { color: "#3B9EFF", fontSize: 14, fontWeight: "600" },
-  headerEyebrow: { fontSize: 11, fontWeight: "700", letterSpacing: 4, color: "#3B9EFF", marginBottom: 4 },
-  headerTitle: { fontSize: 42, fontWeight: "800", color: "#FFFFFF", letterSpacing: -1, lineHeight: 44 },
-  headerSub: { fontSize: 14, color: "#5A7A9A", marginTop: 6 },
+  eyebrow: { fontSize: 10, fontWeight: "700", letterSpacing: 4, color: "#3B9EFF", marginBottom: 2 },
+  title: { fontSize: 34, fontWeight: "800", color: "#FFFFFF", letterSpacing: -1 },
+  sub: { fontSize: 13, color: "#5A7A9A", marginTop: 4 },
 
   vazioBox: { alignItems: "center", marginTop: 60, paddingHorizontal: 40 },
   vazioEmoji: { fontSize: 48, marginBottom: 16 },
   vazioTitulo: { fontSize: 18, fontWeight: "700", color: "#FFFFFF", marginBottom: 8 },
   vazioSub: { fontSize: 14, color: "#5A7A9A", textAlign: "center", lineHeight: 20 },
 
-  itemCard: {
-    marginHorizontal: 16, marginBottom: 12, backgroundColor: "#112236",
-    borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#1E3A5F",
-  },
-  itemHeader: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  itemNumero: {
-    width: 24, height: 24, borderRadius: 12, backgroundColor: "#1E3A5F",
-    alignItems: "center", justifyContent: "center", marginRight: 10,
-  },
-  itemNumeroText: { color: "#3B9EFF", fontSize: 11, fontWeight: "700" },
-  itemData: { color: "#5A7A9A", fontSize: 12 },
-  itemDestaque: { flexDirection: "row", alignItems: "baseline" },
-  itemValorGrande: { fontSize: 36, fontWeight: "800", color: "#FFFFFF", letterSpacing: -1 },
-  itemUnidade: { fontSize: 16, color: "#3B9EFF", fontWeight: "600" },
-  itemKm: { color: "#8AAFCC", fontSize: 13, marginTop: 2, marginBottom: 12 },
-  itemDivisor: { height: 1, backgroundColor: "#1E3A5F", marginBottom: 12 },
-  itemDetalhes: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  itemDetalheCol: {
-    backgroundColor: "#0D1B2A", borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 6, minWidth: "45%",
-  },
-  itemDetalheLabel: { color: "#5A7A9A", fontSize: 10, fontWeight: "600", marginBottom: 2 },
-  itemDetalheValor: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
+  card: { marginHorizontal: 16, marginBottom: 12, backgroundColor: "#112236", borderRadius: 16, padding: 14, borderWidth: 1, borderColor: "#1E3A5F" },
+  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  numero: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#1E3A5F", alignItems: "center", justifyContent: "center", marginRight: 8 },
+  numeroText: { color: "#3B9EFF", fontSize: 11, fontWeight: "700" },
+  data: { color: "#5A7A9A", fontSize: 12 },
+  destaque: { flexDirection: "row", alignItems: "baseline" },
+  valorGrande: { fontSize: 34, fontWeight: "800", color: "#FFFFFF", letterSpacing: -1 },
+  unidade: { fontSize: 15, color: "#3B9EFF", fontWeight: "600" },
+  km: { color: "#8AAFCC", fontSize: 13, marginTop: 2, marginBottom: 10 },
+  divisor: { height: 1, backgroundColor: "#1E3A5F", marginBottom: 10 },
+  medidas: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  medidaItem: { backgroundColor: "#0D1B2A", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, minWidth: "45%" },
+  medidaLabel: { color: "#5A7A9A", fontSize: 10, fontWeight: "600", marginBottom: 2 },
+  medidaValor: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
 
   btnLimpar: { marginHorizontal: 16, marginTop: 8, paddingVertical: 14, alignItems: "center" },
   btnLimparText: { color: "#FF6B6B", fontSize: 13, fontWeight: "600" },
-
-  footer: { marginTop: 24, alignItems: "center" },
-  footerText: { color: "#2A4A6A", fontSize: 12 },
 });
