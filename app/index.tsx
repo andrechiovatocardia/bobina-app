@@ -1,10 +1,17 @@
-import {
-  StyleSheet, Text, View, TextInput, TouchableOpacity,
-  StatusBar, Modal, KeyboardAvoidingView, Platform, Dimensions,
-} from "react-native";
-import { useState } from "react";
-import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet, Text,
+  TextInput, TouchableOpacity,
+  View
+} from "react-native";
+import Svg, { Line, Text as SvgText } from "react-native-svg";
 
 export type HistoricoItem = {
   id: string;
@@ -22,6 +29,108 @@ type Resultado = {
   comprimentoComFator: number;
 };
 
+function DiagramaBobina({ scale = 1 }: { scale?: number }) {
+  const W = 320 * scale, H = 280 * scale;
+  const s = scale;
+
+  const flangeX1 = 90*s, flangeX2 = 250*s;
+  const flangeTop = 35*s, flangeBot = 155*s;
+  const eixoTop = 75*s, eixoBot = 115*s;
+  const folgaTop = 48*s, folgaBot = 142*s;
+  const cx = (flangeX1 + flangeX2) / 2;
+  const cy = (flangeTop + flangeBot) / 2;
+  const caboY = 210*s;
+  const caboX1 = 60*s, caboX2 = 260*s;
+  const caboDiam = 14*s;
+
+  return (
+    <Svg width={W} height={H}>
+      {/* Flange esquerda */}
+      <Line x1={flangeX1} y1={flangeTop} x2={flangeX1} y2={flangeBot} stroke="#3B9EFF" strokeWidth={3*s} strokeLinecap="round" />
+      <Line x1={flangeX1-8*s} y1={flangeTop} x2={flangeX1+8*s} y2={flangeTop} stroke="#3B9EFF" strokeWidth={2.5*s} />
+      <Line x1={flangeX1-8*s} y1={flangeBot} x2={flangeX1+8*s} y2={flangeBot} stroke="#3B9EFF" strokeWidth={2.5*s} />
+
+      {/* Flange direita */}
+      <Line x1={flangeX2} y1={flangeTop} x2={flangeX2} y2={flangeBot} stroke="#3B9EFF" strokeWidth={3*s} strokeLinecap="round" />
+      <Line x1={flangeX2-8*s} y1={flangeTop} x2={flangeX2+8*s} y2={flangeTop} stroke="#3B9EFF" strokeWidth={2.5*s} />
+      <Line x1={flangeX2-8*s} y1={flangeBot} x2={flangeX2+8*s} y2={flangeBot} stroke="#3B9EFF" strokeWidth={2.5*s} />
+
+      {/* Eixo superior e inferior */}
+      <Line x1={flangeX1} y1={eixoTop} x2={flangeX2} y2={eixoTop} stroke="#3B9EFF" strokeWidth={1.5*s} />
+      <Line x1={flangeX1} y1={eixoBot} x2={flangeX2} y2={eixoBot} stroke="#3B9EFF" strokeWidth={1.5*s} />
+
+      {/* Linha do meio do eixo — a linha azul clara que sumiu */}
+      <Line x1={flangeX1} y1={cy} x2={flangeX2} y2={cy} stroke="#8AAFCC" strokeWidth={1*s} strokeDasharray={`${4*s},${3*s}`} />
+
+      {/* Enrolamento tracejado topo e base */}
+      <Line x1={flangeX1+14*s} y1={folgaTop} x2={flangeX2-14*s} y2={folgaTop} stroke="#8AAFCC" strokeWidth={1.5*s} strokeDasharray={`${5*s},${3*s}`} />
+      <Line x1={flangeX1+14*s} y1={folgaBot} x2={flangeX2-14*s} y2={folgaBot} stroke="#8AAFCC" strokeWidth={1.5*s} strokeDasharray={`${5*s},${3*s}`} />
+
+      {/* Faixas de enrolamento — desenhadas ANTES das linhas do eixo */}
+      {[55, 65, 75, 130, 140].map((y) => (
+        <Line key={y} x1={flangeX1+2*s} y1={y*s} x2={flangeX2-2*s} y2={y*s} stroke="#1E3A5F" strokeWidth={5*s} />
+      ))}
+
+      {/* Eixo superior e inferior — desenhados DEPOIS para ficarem visíveis */}
+      <Line x1={flangeX1} y1={eixoTop} x2={flangeX2} y2={eixoTop} stroke="#3B9EFF" strokeWidth={1.5*s} />
+      <Line x1={flangeX1} y1={eixoBot} x2={flangeX2} y2={eixoBot} stroke="#3B9EFF" strokeWidth={1.5*s} />
+
+      {/* Linha do meio tracejada */}
+      <Line x1={flangeX1} y1={cy} x2={flangeX2} y2={cy} stroke="#8AAFCC" strokeWidth={s} strokeDasharray={`${4*s},${3*s}`} />
+
+      {/* COTA Largura Útil */}
+      <Line x1={flangeX1+14*s} y1={22*s} x2={flangeX2-14*s} y2={22*s} stroke="#3B9EFF" strokeWidth={s} />
+      <Line x1={flangeX1+14*s} y1={18*s} x2={flangeX1+14*s} y2={26*s} stroke="#3B9EFF" strokeWidth={s} />
+      <Line x1={flangeX2-14*s} y1={18*s} x2={flangeX2-14*s} y2={26*s} stroke="#3B9EFF" strokeWidth={s} />
+      <SvgText x={cx} y={18*s} fontSize={8.5*s} fill="#3B9EFF" textAnchor="middle" fontWeight="bold">Largura Útil</SvgText>
+
+      {/* COTA Ø Externo */}
+      <Line x1={flangeX2+20*s} y1={flangeTop} x2={flangeX2+20*s} y2={flangeBot} stroke="#3B9EFF" strokeWidth={s} />
+      <Line x1={flangeX2+16*s} y1={flangeTop} x2={flangeX2+24*s} y2={flangeTop} stroke="#3B9EFF" strokeWidth={s} />
+      <Line x1={flangeX2+16*s} y1={flangeBot} x2={flangeX2+24*s} y2={flangeBot} stroke="#3B9EFF" strokeWidth={s} />
+      <SvgText x={flangeX2+32*s} y={cy+3*s} fontSize={8.5*s} fill="#3B9EFF" textAnchor="middle" fontWeight="bold"
+        transform={`rotate(-90, ${flangeX2+32*s}, ${cy})`}>Ø Externo</SvgText>
+
+      {/* COTA Ø Interno */}
+      <Line x1={flangeX1-14*s} y1={eixoTop} x2={flangeX1-14*s} y2={eixoBot} stroke="#8AAFCC" strokeWidth={s} />
+      <Line x1={flangeX1-18*s} y1={eixoTop} x2={flangeX1-10*s} y2={eixoTop} stroke="#8AAFCC" strokeWidth={s} />
+      <Line x1={flangeX1-18*s} y1={eixoBot} x2={flangeX1-10*s} y2={eixoBot} stroke="#8AAFCC" strokeWidth={s} />
+      <SvgText x={flangeX1-22*s} y={cy+3*s} fontSize={8.5*s} fill="#8AAFCC" textAnchor="middle" fontWeight="bold"
+        transform={`rotate(-90, ${flangeX1-22*s}, ${cy})`}>Ø Interno</SvgText>
+
+      {/* COTA Folga */}
+      <Line x1={flangeX2-10*s} y1={flangeTop+2*s} x2={flangeX2-10*s} y2={folgaTop-2*s} stroke="#FFB347" strokeWidth={s} />
+      <Line x1={flangeX2-14*s} y1={flangeTop+2*s} x2={flangeX2-6*s} y2={flangeTop+2*s} stroke="#FFB347" strokeWidth={s} />
+      <Line x1={flangeX2-14*s} y1={folgaTop-2*s} x2={flangeX2-6*s} y2={folgaTop-2*s} stroke="#FFB347" strokeWidth={s} />
+      <SvgText x={flangeX2+8*s} y={(flangeTop+folgaTop)/2+3*s} fontSize={8.5*s} fill="#FFB347" textAnchor="start" fontWeight="bold">Folga</SvgText>
+
+      {/* Fator Enchimento */}
+      <SvgText x={cx} y={folgaBot+12*s} fontSize={8*s} fill="#5A7A9A" textAnchor="middle">Fator Enchimento</SvgText>
+
+      {/* Separador */}
+      <Line x1={40*s} y1={175*s} x2={280*s} y2={175*s} stroke="#1E3A5F" strokeWidth={s} strokeDasharray={`${4*s},${4*s}`} />
+
+      {/* CABO — contorno */}
+      <Line x1={caboX1+30*s} y1={caboY-caboDiam/2} x2={caboX2-10*s} y2={caboY-caboDiam/2} stroke="#7EE8A2" strokeWidth={1.5*s} />
+      <Line x1={caboX1+30*s} y1={caboY+caboDiam/2} x2={caboX2-10*s} y2={caboY+caboDiam/2} stroke="#7EE8A2" strokeWidth={1.5*s} />
+      <Line x1={caboX1+30*s} y1={caboY-caboDiam/2} x2={caboX1+30*s} y2={caboY+caboDiam/2} stroke="#7EE8A2" strokeWidth={1.5*s} />
+      <Line x1={caboX2-10*s} y1={caboY-caboDiam/2} x2={caboX2-10*s} y2={caboY+caboDiam/2} stroke="#7EE8A2" strokeWidth={1.5*s} />
+      {/* Linha central cabo */}
+      <Line x1={caboX1} y1={caboY} x2={caboX2} y2={caboY} stroke="#8AAFCC" strokeWidth={s} strokeDasharray={`${4*s},${3*s}`} />
+
+      {/* COTA Ø Cabo */}
+      <Line x1={caboX2+8*s} y1={caboY-caboDiam/2} x2={caboX2+8*s} y2={caboY+caboDiam/2} stroke="#7EE8A2" strokeWidth={s} />
+      <Line x1={caboX2+4*s} y1={caboY-caboDiam/2} x2={caboX2+12*s} y2={caboY-caboDiam/2} stroke="#7EE8A2" strokeWidth={s} />
+      <Line x1={caboX2+4*s} y1={caboY+caboDiam/2} x2={caboX2+12*s} y2={caboY+caboDiam/2} stroke="#7EE8A2" strokeWidth={s} />
+      <SvgText
+      x={caboX2+22*s} y={caboY+4*s}
+      fontSize={8.5*s} fill="#7EE8A2" textAnchor="middle" fontWeight="bold"
+      transform={`rotate(-90, ${caboX2+22*s}, ${caboY})`}>Ø Cabo
+      </SvgText>
+    </Svg>
+  );
+}
+
 export default function Index() {
   const [di, setDi] = useState("");
   const [de, setDe] = useState("");
@@ -32,8 +141,23 @@ export default function Index() {
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [erro, setErro] = useState("");
   const [modalSalvar, setModalSalvar] = useState(false);
+  const [modalAjuda, setModalAjuda] = useState(false);
   const [nomeBobina, setNomeBobina] = useState("");
+  const [modalDiagrama, setModalDiagrama] = useState(false);
   const router = useRouter();
+
+  const params = useLocalSearchParams();
+
+useEffect(() => {
+  if (params.diametroInterno && typeof params.diametroInterno === "string") {
+    setDi(String(params.diametroInterno));
+    setDe(String(params.diametroExterno));
+    setLarg(String(params.largura));
+    setFolga(String(params.folga));
+    setCabo(String(params.diametroCabo));
+    setFator(String(params.fatorEnchimento));
+  }
+}, []);
 
   const valores = { diametroInterno: di, diametroExterno: de, largura: larg, folga, diametroCabo: cabo, fatorEnchimento: fator };
 
@@ -103,17 +227,21 @@ export default function Index() {
       {/* HEADER */}
       <View style={s.header}>
         <View>
-          <Text style={s.eyebrow}>CÁLCULO DE</Text>
-          <Text style={s.title}>Bobinas</Text>
+          <Text style={s.eyebrow}>CAPACIDADE EM</Text>
+          <Text style={s.title}>Bobinas / Carretéis</Text>
         </View>
         <View style={s.navBtns}>
+          <TouchableOpacity style={s.navBtn} onPress={() => setModalAjuda(true)}>
+            <Text style={s.navBtnText}>❓</Text>
+            <Text style={s.navBtnLabel}>Ajuda</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={s.navBtn} onPress={() => router.push("/historico")}>
             <Text style={s.navBtnText}>📋</Text>
             <Text style={s.navBtnLabel}>Histórico</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.navBtn} onPress={() => router.push("/minhasbobinas")}>
             <Text style={s.navBtnText}>⭐</Text>
-            <Text style={s.navBtnLabel}>Minhas</Text>
+            <Text style={s.navBtnLabel}>Salvos</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -181,10 +309,10 @@ export default function Index() {
             <Text style={s.btnCalcularText}>CALCULAR</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.btnIcone} onPress={limpar} activeOpacity={0.7}>
-            <Text style={s.btnIconeText}>🗑</Text>
+            <Text style={s.btnIconeText}>🧹</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.btnIcone} onPress={() => setModalSalvar(true)} activeOpacity={0.7}>
-            <Text style={s.btnIconeText}>⭐</Text>
+            <Text style={s.btnIconeText}>💾</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -206,7 +334,6 @@ export default function Index() {
                   ["Voltas/camada", `${resultado.voltasPorCamada}`],
                   ["Camadas", `${resultado.numeroCamadas}`],
                   ["Total voltas", `${resultado.totalVoltas.toLocaleString("pt-BR")}`],
-                  ["Ø médio", `${resultado.diametroMedio.toFixed(0)} mm`],
                 ].map(([l, v]) => (
                   <View key={l} style={s.detalheItem}>
                     <Text style={s.detalheLabel}>{l}</Text>
@@ -216,18 +343,67 @@ export default function Index() {
               </View>
             </View>
             <Text style={s.resultadoBruto}>Bruto: {resultado.comprimentoTotal.toFixed(0)} m</Text>
+            <View style={s.divisorDiagrama} />
           </>
-        ) : (
-          <View style={s.resultadoVazio}>
-            <Text style={s.resultadoVazioText}>Preencha os campos e calcule</Text>
-          </View>
-        )}
+        ) : null}
+        <TouchableOpacity style={s.diagramaContainer} onPress={() => setModalDiagrama(true)} activeOpacity={0.8}>
+          <DiagramaBobina scale={resultado ? 0.45 : 1} />
+          <Text style={s.diagramaHint}>🔍 Toque para ampliar</Text>
+        </TouchableOpacity>
       </View>
+      
+      {/* MODAL AJUDA */}
+      <Modal visible={modalAjuda} transparent animationType="fade">
+        <View style={s.modalOverlay}>
+          <View style={[s.modalCard, { width: 320 }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={{ alignItems: "flex-end", marginBottom: 8 }}>
+                <TouchableOpacity onPress={() => setModalAjuda(false)} style={s.btnFechar}>
+                  <Text style={s.btnFecharText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={[s.modalTitulo, { marginBottom: 16 }]}>❓ Como usar o app</Text>
+              <Text style={s.ajudaSec}>📐 Cálculo de Bobina</Text>
+              <Text style={s.ajudaTexto}>Preencha os 6 campos com as medidas do carretel e do cabo, depois toque em CALCULAR. O resultado aparece em metros e km, já com o fator de enchimento aplicado.</Text>
+              <Text style={s.ajudaSec}>🧹 Limpar campos</Text>
+              <Text style={s.ajudaTexto}>Toque no botão da vassoura para apagar todos os campos e começar um novo cálculo do zero.</Text>
+              <Text style={s.ajudaSec}>💾 Salvar Bobina</Text>
+              <Text style={s.ajudaTexto}>Preencha as medidas de uma bobina que você usa com frequência e toque em 💾. Digite um nome (ex: "Bobina Linha 3") e salve. Ela ficará guardada em "Salvos".</Text>
+              <Text style={s.ajudaSec}>⭐ Minhas Bobinas</Text>
+              <Text style={s.ajudaTexto}>Acesse suas bobinas cadastradas. Toque em uma delas para carregar as medidas automaticamente na tela de cálculo. Para excluir, toque no ícone de lixeira ao lado da bobina.</Text>
+              <Text style={s.ajudaSec}>📋 Histórico</Text>
+              <Text style={s.ajudaTexto}>Guarda automaticamente os últimos 15 cálculos realizados, com data, hora e todas as medidas usadas. Para apagar tudo, use o botão "Limpar histórico".</Text>
+              <Text style={s.ajudaSec}>💡 Fator de Enchimento</Text>
+              <Text style={s.ajudaTexto}>Corrige a diferença entre o cálculo teórico e a realidade. O padrão de 90% é o mais usado na indústria. Ajuste conforme a experiência com cada tipo de cabo.</Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL DIAGRAMA AMPLIADO */}
+      <Modal visible={modalDiagrama} transparent animationType="fade">
+        <View style={s.modalOverlay}>
+          <View style={[s.modalCard, { width: "95%", padding: 16, paddingTop: 12 }]}>
+            <View style={{ alignItems: "flex-end", marginBottom: 4 }}>
+              <TouchableOpacity onPress={() => setModalDiagrama(false)} style={s.btnFechar}>
+                <Text style={s.btnFecharText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={[s.cardTitle, { marginBottom: 12 }]}>DIAGRAMA TÉCNICO</Text>
+            <View style={{ alignItems: "center", justifyContent: "center" }}>
+              <DiagramaBobina scale={1.4} />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* MODAL SALVAR BOBINA */}
       <Modal visible={modalSalvar} transparent animationType="fade">
-        <View style={s.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={s.modalOverlay}>
             <View style={s.modalCard}>
               <Text style={s.modalTitulo}>Salvar Bobina</Text>
               <Text style={s.modalSub}>Digite um nome para identificar esta bobina</Text>
@@ -248,8 +424,8 @@ export default function Index() {
                 </TouchableOpacity>
               </View>
             </View>
-          </KeyboardAvoidingView>
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Text style={s.footer}>BobinaApp © 2025</Text>
@@ -258,16 +434,21 @@ export default function Index() {
 }
 
 const s = StyleSheet.create({
+  diagramaHint: { color: "#2A4A6A", fontSize: 10, textAlign: "center", marginTop: 2 },
   root: { flex: 1, backgroundColor: "#0D1B2A", paddingHorizontal: 14, paddingTop: 48 },
+  divisorDiagrama: { height: 1, backgroundColor: "#1E3A5F", marginVertical: 8 },
+  diagramaContainer: { alignItems: "center", paddingVertical: 4 },
 
   // HEADER
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
-  eyebrow: { fontSize: 10, fontWeight: "700", letterSpacing: 4, color: "#3B9EFF" },
-  title: { fontSize: 32, fontWeight: "800", color: "#FFFFFF", letterSpacing: -1 },
+  eyebrow: { fontSize: 8, fontWeight: "700", letterSpacing: 4, color: "#3B9EFF" },
+  title: { fontSize: 22, fontWeight: "800", color: "#FFFFFF", letterSpacing: -1 },
   navBtns: { flexDirection: "row", gap: 8 },
-  navBtn: { backgroundColor: "#112236", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, alignItems: "center", borderWidth: 1, borderColor: "#1E3A5F" },
-  navBtnText: { fontSize: 18 },
-  navBtnLabel: { fontSize: 10, color: "#3B9EFF", fontWeight: "600", marginTop: 2 },
+  navBtn: { backgroundColor: "#112236", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 6, alignItems: "center", borderWidth: 1, borderColor: "#1E3A5F" },
+  navBtnText: { fontSize: 14 },
+  navBtnLabel: { fontSize: 9, color: "#3B9EFF", fontWeight: "600", marginTop: 1 },
+  btnFechar: { width: 28, height: 28, borderRadius: 14, backgroundColor: "#1E3A5F", alignItems: "center", justifyContent: "center"},
+  btnFecharText: { color: "#3B9EFF", fontSize: 16, fontWeight: "700" },
 
   // CARD CAMPOS
   card: { backgroundColor: "#112236", borderRadius: 18, padding: 14, borderWidth: 1, borderColor: "#1E3A5F", marginBottom: 12 },
@@ -304,7 +485,7 @@ const s = StyleSheet.create({
 
   // MODAL
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "center", alignItems: "center" },
-  modalCard: { backgroundColor: "#112236", borderRadius: 20, padding: 24, width: 300, borderWidth: 1, borderColor: "#3B9EFF" },
+  modalCard: { backgroundColor: "#112236", borderRadius: 20, padding: 24, paddingTop: 16, width: 300, maxHeight: "80%", borderWidth: 1, borderColor: "#3B9EFF" },
   modalTitulo: { fontSize: 18, fontWeight: "700", color: "#FFFFFF", marginBottom: 6 },
   modalSub: { fontSize: 13, color: "#5A7A9A", marginBottom: 16 },
   modalInput: { backgroundColor: "#0D1B2A", borderRadius: 10, borderWidth: 1, borderColor: "#1E3A5F", paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: "#FFFFFF", marginBottom: 16 },
@@ -315,4 +496,7 @@ const s = StyleSheet.create({
   modalBtnSalvarText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 
   footer: { color: "#1A2A3A", fontSize: 11, textAlign: "center", paddingVertical: 8 },
+
+  ajudaSec: { color: "#3B9EFF", fontSize: 13, fontWeight: "700", marginTop: 14, marginBottom: 4 },
+  ajudaTexto: { color: "#8AAFCC", fontSize: 13, lineHeight: 20 },
 });

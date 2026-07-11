@@ -1,10 +1,13 @@
-import {
-  StyleSheet, Text, View, TouchableOpacity,
-  ScrollView, StatusBar, Alert,
-} from "react-native";
-import { useEffect, useState } from "react";
-import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  ScrollView, StatusBar,
+  StyleSheet, Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type Bobina = {
   id: string;
